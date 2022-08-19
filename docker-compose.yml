@@ -16,7 +16,9 @@ services:
       options:
         max-size: "200m"
     volumes: 
-      - ./docker/db/:/var/lib/mysql
+      - ./docker/db/data:/var/lib/mysql
+      - ./docker/db/conf:/etc/mysql/conf.d
+      - ./docker/db/init:/docker-entrypoint-initdb.d/
     environment:
       MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DATABASE_NAME}

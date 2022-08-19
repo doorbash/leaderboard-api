@@ -39,18 +39,6 @@ func (g *GameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 	return &game, nil
 }
 
-func CreateGames() []string {
-	return []string{
-		`CREATE TABLE IF NOT EXISTS games (
-			id varchar(30) NOT NULL,
-			name varchar(200) NOT NULL,
-			version int NOT NULL DEFAULT '1',
-			version_name varchar(50) NOT NULL DEFAULT '1.0.0',
-			PRIMARY KEY (id)
-		  )`,
-	}
-}
-
 func NewGameRepository(db *sql.DB) *GameRepository {
 	return &GameRepository{
 		db: db,

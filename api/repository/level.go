@@ -11,21 +11,6 @@ type LevelRepository struct {
 	db *sql.DB
 }
 
-func CreateLevels() []string {
-	return []string{
-		`CREATE TABLE IF NOT EXISTS levels (
-			gid varchar(30) NOT NULL,
-			number int NOT NULL,
-			data json NOT NULL,
-			min_valid_time int NOT NULL DEFAULT '0',
-			max_valid_score int NOT NULL DEFAULT '0',
-			PRIMARY KEY (gid,number)
-		  )`,
-		`ALTER TABLE levels
-		  ADD CONSTRAINT levels_ibfk_1 FOREIGN KEY (gid) REFERENCES games (id) ON DELETE CASCADE ON UPDATE CASCADE;`,
-	}
-}
-
 func (l *LevelRepository) GetAllByGameID(ctx context.Context, gid string) ([]domain.Level, error) {
 	rows, err := l.db.QueryContext(ctx, "SELECT number, data, min_valid_time, max_valid_score FROM levels WHERE gid = ? ORDER BY number ASC", gid)
 	if err != nil {

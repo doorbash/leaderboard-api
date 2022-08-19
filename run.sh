@@ -7,8 +7,8 @@ if [ "$1" == "stop" ]; then
 fi
 
 if [ "$1" == "clean" ]; then
-    sudo rm -rf docker/db
-    sudo mkdir -p docker/db
+    sudo rm -rf docker/db/data
+    sudo mkdir -p docker/db/data
     exit 0
 fi
 

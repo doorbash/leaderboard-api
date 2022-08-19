@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/doorbash/leaderboard-api/api/handler"
 	"github.com/doorbash/leaderboard-api/api/repository"
-	"github.com/doorbash/leaderboard-api/api/util"
 	"github.com/doorbash/leaderboard-api/api/util/middleware"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -43,19 +41,6 @@ func initDB() *sql.DB {
 	db.SetConnMaxLifetime(time.Minute * 3)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
-
-	queries := make([]string, 0)
-
-	queries = append(queries, repository.CreateGames()...)
-
-	for _, q := range queries {
-		ctx, cancel := util.GetContextWithTimeout(context.Background())
-		defer cancel()
-		db.ExecContext(ctx, q)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
 
 	return db
 }

@@ -3,4 +3,4 @@ api/api
 docker/nginx/cert/fullchain.pem
 docker/nginx/cert/privkey.pem
 docker/redis/
-docker/db/
+docker/db/data/
