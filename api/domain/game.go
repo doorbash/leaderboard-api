@@ -2,16 +2,27 @@ package domain
 
 import (
 	"context"
+	"encoding/json"
 )
 
 type Game struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	VersionName string `json:"version_name"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Data string `json:"data"`
+}
+
+func (r *Game) MarshalJSON() ([]byte, error) {
+	ret := make(map[string]interface{})
+	ret["id"] = r.ID
+	ret["name"] = r.Name
+	ret["data"] = json.RawMessage(r.Data)
+	b, err := json.Marshal(ret)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 type GameRepository interface {
-	GetAll(ctx context.Context) ([]Game, error)
 	GetByID(ctx context.Context, id string) (*Game, error)
 }

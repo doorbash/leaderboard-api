@@ -49,7 +49,8 @@ func main() {
 	db := initDB()
 
 	gRepo := repository.NewGameRepository(db)
-	lRepo := repository.NewLevelRepository(db)
+	pRepo := repository.NewPlayerRepository(db)
+	ldRepo := repository.NewLeaderboardDataRepository(db)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggerMiddleware)
@@ -60,7 +61,7 @@ func main() {
 	r.Use(c.Handler)
 
 	handler.NewGameHandler(r, gRepo)
-	handler.NewLevelHandler(r, lRepo)
+	handler.NewLeaderboardHandler(r, pRepo, ldRepo)
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))
