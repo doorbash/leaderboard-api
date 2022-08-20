@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Aug 20, 2022 at 09:27 PM
+-- Generation Time: Aug 20, 2022 at 10:28 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.0.19
 
@@ -95,33 +95,40 @@ IF p_v2 = v2 THEN
 
 -- CHECK V1
 IF p_v1 = v1 THEN
+SELECT 2;
 LEAVE sp;
 ELSEIF v1_order = 1 THEN
 IF p_v1 < v1 THEN
+SELECT 2;
 LEAVE sp;
 END IF;
 ELSEIF v1_order = -1 THEN
 IF p_v1 > v1 THEN
+SELECT 2;
 LEAVE sp;
 END IF;
 END IF;
 
 ELSEIF v2_order = 1 THEN
 IF p_v2 < v2 THEN
+SELECT 2;
 LEAVE sp;
 END IF;
 ELSEIF v2_order = -1 THEN
 IF p_v2 > v2 THEN
+SELECT 2;
 LEAVE sp;
 END IF;
 END IF;
 
 ELSEIF v3_order = 1 THEN
 IF p_v3 < v3 THEN
+SELECT 2;
 LEAVE sp;
 END IF;
 ELSEIF v3_order = -1 THEN
 IF p_v3 > v3 THEN
+SELECT 2;
 LEAVE sp;
 END IF;
 END IF;

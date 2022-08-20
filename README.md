@@ -31,3 +31,10 @@ IMAGE_REDIS="redis:7.0.4-alpine3.16"
 ```
 ./run.sh
 ```
+
+## Postman
+https://documenter.getpostman.com/view/13117984/VUqpscfn
+
+## Todo
+- [ ] Add limit for leaderboard data
+- [ ] Add cache mechanism
