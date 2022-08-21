@@ -12,11 +12,11 @@ type PlayerRepository struct {
 }
 
 func (p *PlayerRepository) GetByUID(ctx context.Context, uid string) (*domain.Player, error) {
-	row := p.db.QueryRowContext(ctx, "SELECT id, name FROM players WHERE uid = ?", uid)
+	row := p.db.QueryRowContext(ctx, "SELECT id, name, banned FROM players WHERE uid = ?", uid)
 	player := domain.Player{
 		UID: uid,
 	}
-	if err := row.Scan(&player.ID, &player.Name); err != nil {
+	if err := row.Scan(&player.ID, &player.Name, &player.Banned); err != nil {
 		return nil, err
 	}
 	return &player, nil
@@ -31,7 +31,7 @@ func (p *PlayerRepository) Insert(ctx context.Context, player *domain.Player) er
 }
 
 func (p *PlayerRepository) Update(ctx context.Context, player *domain.Player) error {
-	_, err := p.db.ExecContext(ctx, "UPDATE players SET name = ? WHERE uid = ?", player.Name, player.UID)
+	_, err := p.db.ExecContext(ctx, "UPDATE players SET name = ?, banned = ? WHERE uid = ?", player.Name, player.Banned, player.UID)
 	if err != nil {
 		return err
 	}

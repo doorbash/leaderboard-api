@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Aug 20, 2022 at 10:28 PM
+-- Generation Time: Aug 21, 2022 at 01:45 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.0.19
 
@@ -30,6 +30,7 @@ DECLARE _lid INT DEFAULT 0;
 DECLARE v1_order TINYINT DEFAULT 0;
 DECLARE v2_order TINYINT DEFAULT 0;
 DECLARE v3_order TINYINT DEFAULT 0;
+
 START TRANSACTION;
 
 SELECT `id`, `value1_order`, `value2_order`, `value3_order`
@@ -41,7 +42,7 @@ IF _lid > 0 THEN
 
 SELECT name, value1, value2, value3 FROM `leaderboard_data`
 JOIN players ON `leaderboard_data`.`pid` = `players`.`uid`
-WHERE `lid` = p_lid
+WHERE `players`.`banned` = 0 AND `lid` = p_lid
 ORDER BY
 
 CASE WHEN v3_order = 1 THEN value3 END DESC,
@@ -70,10 +71,65 @@ DECLARE `v3` INT DEFAULT 0;
 DECLARE `v1_order` TINYINT DEFAULT 0;
 DECLARE `v2_order` TINYINT DEFAULT 0;
 DECLARE `v3_order` TINYINT DEFAULT 0;
-DECLARE `_rollback` BOOL DEFAULT 0;
-DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET `_rollback` = 1;
+DECLARE `v1_limit` INT DEFAULT 0;
+DECLARE `v2_limit` INT DEFAULT 0;
+DECLARE `v3_limit` INT DEFAULT 0;
 
 START TRANSACTION;
+
+SELECT `value1_order`, `value2_order`, `value3_order`,
+`value1_limit`, `value2_limit`, `value3_limit`
+INTO v1_order, v2_order, v3_order, 
+v1_limit, v2_limit, v3_limit
+FROM `leaderboards`
+WHERE `uid` = p_lid;
+
+
+-- CHECK LIMITS
+
+IF v3_limit <> 0 THEN
+IF v3_order = 1 THEN
+IF p_v3 > v3_limit THEN
+SELECT 3;
+LEAVE sp;
+END IF;
+ELSEIF v3_order = -1 THEN
+IF p_v3 < v3_limit THEN
+SELECT 3;
+LEAVE sp;
+END IF;
+END IF;
+END IF;
+
+IF v2_limit <> 0 THEN
+IF v2_order = 1 THEN
+IF p_v2 > v2_limit THEN
+SELECT 3;
+LEAVE sp;
+END IF;
+ELSEIF v2_order = -1 THEN
+IF p_v2 < v2_limit THEN
+SELECT 3;
+LEAVE sp;
+END IF;
+END IF;
+END IF;
+
+IF v1_limit <> 0 THEN
+IF v1_order = 1 THEN
+IF p_v1 > v1_limit THEN
+SELECT 3;
+LEAVE sp;
+END IF;
+ELSEIF v1_order = -1 THEN
+IF p_v1 < v1_limit THEN
+SELECT 3;
+LEAVE sp;
+END IF;
+END IF;
+END IF;
+
+
 
 SELECT `id`, `value1`, `value2`, `value3`
 INTO ldid, v1, v2, v3
@@ -82,11 +138,6 @@ WHERE `lid` = p_lid AND `pid` = p_pid;
 
 IF ldid > 0 THEN
 -- EXISTS
-
-SELECT `value1_order`, `value2_order`, `value3_order`
-INTO v1_order, v2_order, v3_order
-FROM `leaderboards`
-WHERE `uid` = p_lid;
 
 IF p_v3 = v3 THEN
 
@@ -209,6 +260,9 @@ CREATE TABLE IF NOT EXISTS `leaderboards` (
   `value1_order` tinyint NOT NULL DEFAULT '1',
   `value2_order` tinyint NOT NULL DEFAULT '0',
   `value3_order` tinyint NOT NULL DEFAULT '0',
+  `value1_limit` int NOT NULL DEFAULT '0',
+  `value2_limit` int NOT NULL DEFAULT '0',
+  `value3_limit` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uid` (`uid`),
   KEY `gid` (`gid`)
@@ -256,6 +310,7 @@ CREATE TABLE IF NOT EXISTS `players` (
   `id` int NOT NULL AUTO_INCREMENT,
   `uid` varchar(30) NOT NULL,
   `name` varchar(200) NOT NULL,
+  `banned` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uid` (`uid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

@@ -1,14 +1,14 @@
 version: "3.9"
 services:
-  # redis:
-  #   restart: always
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "200m"
-  #   volumes: 
-  #     - ./docker/redis:/data
-  #   image: ${IMAGE_REDIS}
+  redis:
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+    volumes: 
+      - ./docker/redis:/data
+    image: ${IMAGE_REDIS}
   db:
     restart: always
     logging:
@@ -49,7 +49,7 @@ services:
       DATABASE_NAME: ${DATABASE_NAME}
     depends_on:
       - db
-      # - redis
+      - redis
     image: ghcr.io/doorbash/leaderboard-api:${APP_VERSION}
   nginx:
     restart: always

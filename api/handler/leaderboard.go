@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -12,9 +13,10 @@ import (
 )
 
 type LeaderboardHandler struct {
-	pRepo  domain.PlayerRepository
-	ldRepo domain.LeaderboardDataRepository
-	router *mux.Router
+	pRepo   domain.PlayerRepository
+	ldRepo  domain.LeaderboardDataRepository
+	ipCache domain.BannedIpsCache
+	router  *mux.Router
 }
 
 func (l *LeaderboardHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
@@ -50,12 +52,7 @@ func (l *LeaderboardHandler) NewLeaderboardData(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	pid, ok := body["pid"].(string)
-	if !ok || pid == "" {
-		log.Println("bad pid")
-		util.WriteStatus(w, http.StatusBadRequest)
-		return
-	}
+	pid, _ := body["pid"].(string)
 
 	name, _ := body["name"].(string)
 
@@ -68,18 +65,56 @@ func (l *LeaderboardHandler) NewLeaderboardData(w http.ResponseWriter, r *http.R
 	value3, _ := body["value3"].(float64)
 	v3 := int(value3)
 
-	ctx, cancel := util.GetContextWithTimeout(r.Context())
-	defer cancel()
-	player, err := l.pRepo.GetByUID(ctx, pid)
+	var player *domain.Player
+	var err error
+	var ctx context.Context
+	var cancel context.CancelFunc
 
-	if err != nil {
-		util.WriteStatus(w, http.StatusNotFound)
-		return
+	if pid != "" {
+		ctx, cancel := util.GetContextWithTimeout(r.Context())
+		defer cancel()
+		player, err = l.pRepo.GetByUID(ctx, pid)
+
+		if err != nil {
+			util.WriteInternalServerError(w)
+			return
+		}
+
+		if player.Banned {
+			util.WriteOK(w)
+			return
+		}
+
+		if name != "" && player.Name != name {
+			player.Name = name
+			ctx, cancel = util.GetContextWithTimeout(r.Context())
+			defer cancel()
+			err = l.pRepo.Update(ctx, player)
+			if err != nil {
+				util.WriteInternalServerError(w)
+				return
+			}
+		}
+	} else {
+		if name == "" {
+			util.WriteStatus(w, http.StatusBadRequest)
+			return
+		}
+		player = &domain.Player{
+			Name: name,
+		}
+		ctx, cancel = util.GetContextWithTimeout(r.Context())
+		defer cancel()
+		err = l.pRepo.Insert(ctx, player)
+		if err != nil {
+			util.WriteInternalServerError(w)
+			return
+		}
 	}
 
 	ctx, cancel = util.GetContextWithTimeout(r.Context())
 	defer cancel()
-	err = l.ldRepo.Insert(ctx, lid, pid, v1, v2, v3)
+	err = l.ldRepo.Insert(ctx, lid, player.UID, v1, v2, v3)
 
 	if err != nil {
 		log.Println(err)
@@ -87,33 +122,46 @@ func (l *LeaderboardHandler) NewLeaderboardData(w http.ResponseWriter, r *http.R
 			util.WriteStatus(w, http.StatusConflict)
 			return
 		}
+		if err == repository.ErrLimit {
+			ip := r.Header.Get("X-Forwarded-For")
+			ctx, cancel = util.GetContextWithTimeout(r.Context())
+			defer cancel()
+			err = l.ipCache.BanThisIP(ctx, ip)
+			if err != nil {
+				log.Println(err)
+				util.WriteInternalServerError(w)
+				return
+			}
+
+			player.Banned = true
+			ctx, cancel = util.GetContextWithTimeout(r.Context())
+			defer cancel()
+			err = l.pRepo.Update(ctx, player)
+			if err != nil {
+				util.WriteInternalServerError(w)
+				return
+			}
+			util.WriteOK(w)
+			return
+		}
 		util.WriteStatus(w, http.StatusBadRequest)
 		return
 	}
 
-	if player.Name != name {
-		player.Name = name
-		ctx, cancel = util.GetContextWithTimeout(r.Context())
-		defer cancel()
-		err = l.pRepo.Update(ctx, player)
-		if err != nil {
-			util.WriteInternalServerError(w)
-			return
-		}
-	}
-
-	util.WriteOK(w)
+	util.WriteJson(w, *player)
 }
 
 func NewLeaderboardHandler(
 	r *mux.Router,
 	pRepo domain.PlayerRepository,
 	ldRepo domain.LeaderboardDataRepository,
+	ipCache domain.BannedIpsCache,
 ) *LeaderboardHandler {
 	l := &LeaderboardHandler{
-		pRepo:  pRepo,
-		ldRepo: ldRepo,
-		router: r.PathPrefix("/leaderboards").Subrouter(),
+		pRepo:   pRepo,
+		ldRepo:  ldRepo,
+		ipCache: ipCache,
+		router:  r.PathPrefix("/leaderboards").Subrouter(),
 	}
 
 	l.router.HandleFunc("/{lid}", l.GetLeaderboard).Methods("GET")

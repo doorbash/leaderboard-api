@@ -5,9 +5,10 @@ import (
 )
 
 type Player struct {
-	ID   int    `json:"id"`
-	UID  string `json:"uid"`
-	Name string `json:"name"`
+	ID     int    `json:"-"`
+	UID    string `json:"uid"`
+	Name   string `json:"-"`
+	Banned bool   `json:"-"`
 }
 
 type PlayerRepository interface {

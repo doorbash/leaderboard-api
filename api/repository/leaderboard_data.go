@@ -8,7 +8,10 @@ import (
 	"github.com/doorbash/leaderboard-api/api/domain"
 )
 
-var ErrBetterDataAlreadyExists = errors.New("better data already exists")
+var (
+	ErrBetterDataAlreadyExists = errors.New("better data already exists")
+	ErrLimit                   = errors.New("limit error")
+)
 
 type LeaderboardDataRepository struct {
 	db *sql.DB
@@ -36,6 +39,9 @@ func (ld *LeaderboardDataRepository) Insert(ctx context.Context, lid string, pid
 	}
 	if result == 2 {
 		return ErrBetterDataAlreadyExists
+	}
+	if result == 3 {
+		return ErrLimit
 	}
 	return nil
 }

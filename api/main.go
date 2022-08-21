@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/doorbash/leaderboard-api/api/cache/redis"
 	"github.com/doorbash/leaderboard-api/api/handler"
 	"github.com/doorbash/leaderboard-api/api/repository"
 	"github.com/doorbash/leaderboard-api/api/util/middleware"
@@ -52,8 +53,15 @@ func main() {
 	pRepo := repository.NewPlayerRepository(db)
 	ldRepo := repository.NewLeaderboardDataRepository(db)
 
+	bannedIpsCache := redis.NewBannedIPsRedisCache(7 * 24 * time.Hour)
+
 	r := mux.NewRouter()
 	r.Use(middleware.LoggerMiddleware)
+
+	r.Use((&middleware.BannedIPHandler{
+		IPsCache: bannedIpsCache,
+	}).Middleware)
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
@@ -61,7 +69,7 @@ func main() {
 	r.Use(c.Handler)
 
 	handler.NewGameHandler(r, gRepo)
-	handler.NewLeaderboardHandler(r, pRepo, ldRepo)
+	handler.NewLeaderboardHandler(r, pRepo, ldRepo, bannedIpsCache)
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))
