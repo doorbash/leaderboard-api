@@ -55,6 +55,7 @@ func main() {
 
 	bannedIpsCache := redis.NewBannedIPsRedisCache(7 * 24 * time.Hour)
 	gCache := redis.NewGameCache(20 * time.Minute)
+	ldCache := redis.NewLeaderboardDataCache(20 * time.Minute)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggerMiddleware)
@@ -70,7 +71,13 @@ func main() {
 	r.Use(c.Handler)
 
 	handler.NewGameHandler(r, gRepo, gCache)
-	handler.NewLeaderboardHandler(r, pRepo, ldRepo, bannedIpsCache)
+	handler.NewLeaderboardHandler(
+		r,
+		pRepo,
+		ldRepo,
+		bannedIpsCache,
+		ldCache,
+	)
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))

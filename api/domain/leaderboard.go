@@ -9,6 +9,3 @@ type Leaderboard struct {
 	Value2Order int8   `json:"v2_order"`
 	Value3Order int8   `json:"v3_order"`
 }
-
-// type LeaderboardRepository interface {
-// }

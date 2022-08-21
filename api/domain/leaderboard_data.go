@@ -13,3 +13,8 @@ type LeaderboardDataRepository interface {
 	GetByUID(ctx context.Context, uid string, offset int, count int) ([]LeaderboardData, error)
 	Insert(ctx context.Context, lid string, pid string, v1 int, v2 int, v3 int) error
 }
+
+type LeaderboardDataCache interface {
+	GetByUID(ctx context.Context, uid string) (*string, error)
+	Set(ctx context.Context, uid string, list []LeaderboardData) error
+}
