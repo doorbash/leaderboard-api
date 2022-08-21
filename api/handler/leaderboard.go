@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/doorbash/leaderboard-api/api/domain"
 	"github.com/doorbash/leaderboard-api/api/repository"
@@ -26,9 +27,23 @@ func (l *LeaderboardHandler) GetLeaderboard(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	offset_str := r.URL.Query().Get("offset")
+	offset, err := strconv.Atoi(offset_str)
+	if err != nil || offset < 0 {
+		util.WriteStatus(w, http.StatusBadRequest)
+		return
+	}
+
+	count_str := r.URL.Query().Get("count")
+	count, err := strconv.Atoi(count_str)
+	if err != nil || count < 1 || count > 100 {
+		util.WriteStatus(w, http.StatusBadRequest)
+		return
+	}
+
 	ctx, cancel := util.GetContextWithTimeout(r.Context())
 	defer cancel()
-	lds, err := l.ldRepo.GetByUID(ctx, lid)
+	lds, err := l.ldRepo.GetByUID(ctx, lid, offset, count)
 	if err != nil {
 		log.Println(err)
 		util.WriteInternalServerError(w)

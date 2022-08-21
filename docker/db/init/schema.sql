@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Aug 21, 2022 at 01:45 AM
+-- Generation Time: Aug 21, 2022 at 12:38 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.0.19
 
@@ -25,7 +25,7 @@ DELIMITER $$
 --
 -- Procedures
 --
-CREATE DEFINER=`root`@`%` PROCEDURE `GET_LEADERBOARD` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4)   BEGIN
+CREATE DEFINER=`root`@`%` PROCEDURE `GET_LEADERBOARD` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4, IN `p_offset` INT, IN `p_count` INT)   BEGIN
 DECLARE _lid INT DEFAULT 0;
 DECLARE v1_order TINYINT DEFAULT 0;
 DECLARE v2_order TINYINT DEFAULT 0;
@@ -56,7 +56,9 @@ CASE WHEN v2_order <> 1 THEN value2 END ASC
 ,
 
 CASE WHEN v1_order = 1 THEN value1 END DESC,
-CASE WHEN v1_order <> 1 THEN value1 END ASC;
+CASE WHEN v1_order <> 1 THEN value1 END ASC
+
+LIMIT p_offset, p_count;
 
 END IF;
 

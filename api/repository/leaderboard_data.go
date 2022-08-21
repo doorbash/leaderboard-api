@@ -17,15 +17,25 @@ type LeaderboardDataRepository struct {
 	db *sql.DB
 }
 
-func (ld *LeaderboardDataRepository) GetByUID(ctx context.Context, uid string) ([]domain.LeaderboardData, error) {
-	rows, err := ld.db.QueryContext(ctx, "CALL GET_LEADERBOARD(?)", uid)
+func (ld *LeaderboardDataRepository) GetByUID(
+	ctx context.Context,
+	uid string,
+	offset int,
+	count int,
+) ([]domain.LeaderboardData, error) {
+	rows, err := ld.db.QueryContext(ctx, "CALL GET_LEADERBOARD(?, ?, ?)", uid, offset, count)
 	if err != nil {
 		return nil, err
 	}
 	ret := make([]domain.LeaderboardData, 0)
 	for rows.Next() {
 		ld := domain.LeaderboardData{}
-		rows.Scan(&ld.Name, &ld.Value1, &ld.Value2, &ld.Value3)
+		rows.Scan(
+			&ld.Name,
+			&ld.Value1,
+			&ld.Value2,
+			&ld.Value3,
+		)
 		ret = append(ret, ld)
 	}
 	return ret, nil

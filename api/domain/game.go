@@ -26,3 +26,8 @@ func (r *Game) MarshalJSON() ([]byte, error) {
 type GameRepository interface {
 	GetByID(ctx context.Context, id string) (*Game, error)
 }
+
+type GameCache interface {
+	GetByID(ctx context.Context, id string) (*string, error)
+	Set(ctx context.Context, game Game) error
+}
