@@ -4,12 +4,6 @@
 - Docker Compose
 
 ## Configuration
-- Put SSL key files in:
-```
-docker/nginx/cert/fullchain.pem
-docker/nginx/cert/privkey.pem
-```
-
 - Create `.env`:
 ```
 APP_VERSION=1.0.2
