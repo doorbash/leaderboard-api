@@ -29,7 +29,7 @@ IMAGE_REDIS="redis:7.0.4-alpine3.16"
 
 ## Run
 ```
-./run.sh
+./run.sh prod
 ```
 
 ## Postman
