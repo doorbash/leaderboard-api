@@ -62,8 +62,8 @@ services:
       - ./docker/nginx/html:/usr/share/nginx/html:ro
       - ./docker/nginx/cert:/root/cert:ro
     ports: 
-      # - 80:80
-      - 443:443
+      - 9000:80
+      # - 443:443
     depends_on: 
       - api
       - pma
