@@ -60,9 +60,9 @@ func main() {
 	r := mux.NewRouter()
 	r.Use(middleware.LoggerMiddleware)
 
-	r.Use((&middleware.BannedIPHandler{
+	r.Use(middleware.BannedIPHandler{
 		IPsCache: bannedIpsCache,
-	}).Middleware)
+	}.Middleware)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
