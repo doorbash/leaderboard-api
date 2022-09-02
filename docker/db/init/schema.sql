@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Aug 21, 2022 at 12:38 PM
+-- Generation Time: Sep 02, 2022 at 02:06 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.0.19
 
@@ -56,9 +56,118 @@ CASE WHEN v2_order <> 1 THEN value2 END ASC
 ,
 
 CASE WHEN v1_order = 1 THEN value1 END DESC,
-CASE WHEN v1_order <> 1 THEN value1 END ASC
+CASE WHEN v1_order <> 1 THEN value1 END ASC,
+
+`leaderboard_data`.id ASC
 
 LIMIT p_offset, p_count;
+
+END IF;
+
+COMMIT;
+END$$
+
+CREATE DEFINER=`root`@`%` PROCEDURE `GET_PLAYER_POSITION` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4, IN `p_pid` VARCHAR(30) CHARSET utf8mb4)   sp: BEGIN
+DECLARE _lid INT DEFAULT 0;
+DECLARE _ldid INT DEFAULT 0;
+DECLARE v1_order TINYINT DEFAULT 0;
+DECLARE v2_order TINYINT DEFAULT 0;
+DECLARE v3_order TINYINT DEFAULT 0;
+DECLARE v1 INT DEFAULT 0;
+DECLARE v2 INT DEFAULT 0;
+DECLARE v3 INT DEFAULT 0;
+
+START TRANSACTION;
+
+SELECT `id`, `value1`, `value2`, `value3`
+INTO _ldid, v1, v2, v3
+FROM `leaderboard_data`
+WHERE `pid` = p_pid;
+
+IF _ldid > 0 THEN
+
+SELECT `id`, `value1_order`, `value2_order`, `value3_order`
+INTO _lid, v1_order, v2_order, v3_order
+FROM `leaderboards`
+WHERE `uid` = p_lid;
+
+IF _lid > 0 THEN
+
+IF v3_order = 0 AND v2_order = 0 AND v1_order = 0 THEN
+LEAVE sp;
+END IF;
+
+IF v3_order = 0 AND v2_order = 0 AND v1_order = 1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value1 > v1 OR (value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 0 AND v2_order = 0 AND v1_order = -1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value1 < v1 OR (value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 0 AND v2_order = 1 AND v1_order = 1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 > v2 OR (value2 = v2 AND value1 > v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 0 AND v2_order = 1 AND v1_order = -1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 > v2 OR (value2 = v2 AND value1 < v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 0 AND v2_order = -1 AND v1_order = 1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 < v2 OR (value2 = v2 AND value1 > v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 0 AND v2_order = -1 AND v1_order = -1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 < v2 OR (value2 = v2 AND value1 < v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 1 AND v2_order = 1 AND v1_order = 1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 1 AND v2_order = 1 AND v1_order = -1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 1 AND v2_order = -1 AND v1_order = 1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = 1 AND v2_order = -1 AND v1_order = -1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = -1 AND v2_order = 1 AND v1_order = 1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = -1 AND v2_order = 1 AND v1_order = -1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = -1 AND v2_order = -1 AND v1_order = 1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+IF v3_order = -1 AND v2_order = -1 AND v1_order = -1 THEN
+SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+LEAVE sp;
+END IF;
+
+END IF;
 
 END IF;
 

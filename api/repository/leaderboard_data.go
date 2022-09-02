@@ -41,6 +41,18 @@ func (ld *LeaderboardDataRepository) GetByUID(
 	return ret, nil
 }
 
+func (ld *LeaderboardDataRepository) GetPlayerPosition(ctx context.Context, lid string, pid string) (int, error) {
+	rows, err := ld.db.QueryContext(ctx, "CALL GET_PLAYER_POSITION(?, ?)", lid, pid)
+	if err != nil {
+		return -1, err
+	}
+	ret := -1
+	if rows.Next() {
+		rows.Scan(&ret)
+	}
+	return ret, nil
+}
+
 func (ld *LeaderboardDataRepository) Insert(ctx context.Context, lid string, pid string, v1 int, v2 int, v3 int) error {
 	row := ld.db.QueryRowContext(ctx, "CALL NEW_LEADERBOARD_DATA(?, ?, ?, ?, ?)", lid, pid, v1, v2, v3)
 	var result int

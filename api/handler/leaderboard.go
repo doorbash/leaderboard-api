@@ -92,6 +92,77 @@ func (l *LeaderboardHandler) GetLeaderboard(w http.ResponseWriter, r *http.Reque
 	util.WriteJson(w, lds)
 }
 
+func (l *LeaderboardHandler) GetLeaderboardByPID(w http.ResponseWriter, r *http.Request) {
+	lid, ok := mux.Vars(r)["lid"]
+	if !ok {
+		util.WriteStatus(w, http.StatusBadRequest)
+		return
+	}
+
+	pid, ok := mux.Vars(r)["pid"]
+	if !ok {
+		util.WriteStatus(w, http.StatusBadRequest)
+		return
+	}
+
+	var offset int
+	var count int
+	var err error
+
+	offset_str := r.URL.Query().Get("offset")
+	if offset_str != "" {
+		offset, err = strconv.Atoi(offset_str)
+		if err != nil {
+			util.WriteStatus(w, http.StatusBadRequest)
+			return
+		}
+	} else {
+		offset = -50
+	}
+
+	count_str := r.URL.Query().Get("count")
+	if count_str != "" {
+		count, err = strconv.Atoi(count_str)
+		if err != nil || count < 1 || count > 100 {
+			util.WriteStatus(w, http.StatusBadRequest)
+			return
+		}
+	} else {
+		count = 100
+	}
+
+	ctx, cancel := util.GetContextWithTimeout(r.Context())
+	defer cancel()
+	pos, err := l.ldRepo.GetPlayerPosition(ctx, lid, pid)
+	if err != nil {
+		log.Println(err)
+		util.WriteInternalServerError(w)
+		return
+	}
+
+	_offset := 0
+	if pos+offset > 0 {
+		_offset = pos + offset
+	}
+
+	ctx, cancel = util.GetContextWithTimeout(r.Context())
+	defer cancel()
+	lds, err := l.ldRepo.GetByUID(ctx, lid, _offset, count)
+	if err != nil {
+		log.Println(err)
+		util.WriteInternalServerError(w)
+		return
+	}
+
+	ret := map[string]interface{}{
+		"offset":      _offset,
+		"position":    pos,
+		"leaderboard": lds,
+	}
+
+	util.WriteJson(w, ret)
+}
+
 func (l *LeaderboardHandler) NewLeaderboardData(w http.ResponseWriter, r *http.Request) {
 	lid, ok := mux.Vars(r)["lid"]
 	if !ok {
@@ -222,6 +293,7 @@ func NewLeaderboardHandler(
 	}
 
 	l.router.HandleFunc("/{lid}", l.GetLeaderboard).Methods("GET")
+	l.router.HandleFunc("/{lid}/{pid}", l.GetLeaderboardByPID).Methods("GET")
 
 	jsonRouter := l.router.NewRoute().Subrouter()
 	jsonRouter.Use(middleware.JsonBodyMiddleware)

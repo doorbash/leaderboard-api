@@ -11,6 +11,7 @@ type LeaderboardData struct {
 
 type LeaderboardDataRepository interface {
 	GetByUID(ctx context.Context, uid string, offset int, count int) ([]LeaderboardData, error)
+	GetPlayerPosition(ctx context.Context, lid string, pid string) (int, error)
 	Insert(ctx context.Context, lid string, pid string, v1 int, v2 int, v3 int) error
 }
 
