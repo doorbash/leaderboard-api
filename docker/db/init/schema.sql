@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Sep 02, 2022 at 02:06 PM
+-- Generation Time: Sep 02, 2022 at 03:44 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.0.19
 
@@ -25,24 +25,24 @@ DELIMITER $$
 --
 -- Procedures
 --
-CREATE DEFINER=`root`@`%` PROCEDURE `GET_LEADERBOARD` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4, IN `p_offset` INT, IN `p_count` INT)   BEGIN
+CREATE DEFINER=`root`@`%` PROCEDURE `GET_LEADERBOARD` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4, IN `p_offset` INT, IN `p_count` INT)   sp: BEGIN
 DECLARE _lid INT DEFAULT 0;
 DECLARE v1_order TINYINT DEFAULT 0;
 DECLARE v2_order TINYINT DEFAULT 0;
 DECLARE v3_order TINYINT DEFAULT 0;
-
-START TRANSACTION;
 
 SELECT `id`, `value1_order`, `value2_order`, `value3_order`
 INTO _lid, v1_order, v2_order, v3_order
 FROM `leaderboards`
 WHERE `uid` = p_lid;
 
-IF _lid > 0 THEN
+IF _lid = 0 THEN
+LEAVE sp;
+END IF;
 
 SELECT name, value1, value2, value3 FROM `leaderboard_data`
-JOIN players ON `leaderboard_data`.`pid` = `players`.`uid`
-WHERE `players`.`banned` = 0 AND `lid` = p_lid
+JOIN players ON `leaderboard_data`.`pid` = `players`.`id`
+WHERE `players`.`banned` = 0 AND `lid` = _lid
 ORDER BY
 
 CASE WHEN v3_order = 1 THEN value3 END DESC,
@@ -62,13 +62,11 @@ CASE WHEN v1_order <> 1 THEN value1 END ASC,
 
 LIMIT p_offset, p_count;
 
-END IF;
-
-COMMIT;
 END$$
 
 CREATE DEFINER=`root`@`%` PROCEDURE `GET_PLAYER_POSITION` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4, IN `p_pid` VARCHAR(30) CHARSET utf8mb4)   sp: BEGIN
 DECLARE _lid INT DEFAULT 0;
+DECLARE _pid INT DEFAULT 0;
 DECLARE _ldid INT DEFAULT 0;
 DECLARE v1_order TINYINT DEFAULT 0;
 DECLARE v2_order TINYINT DEFAULT 0;
@@ -77,105 +75,110 @@ DECLARE v1 INT DEFAULT 0;
 DECLARE v2 INT DEFAULT 0;
 DECLARE v3 INT DEFAULT 0;
 
-START TRANSACTION;
-
-SELECT `id`, `value1`, `value2`, `value3`
-INTO _ldid, v1, v2, v3
-FROM `leaderboard_data`
-WHERE `pid` = p_pid;
-
-IF _ldid > 0 THEN
-
 SELECT `id`, `value1_order`, `value2_order`, `value3_order`
 INTO _lid, v1_order, v2_order, v3_order
 FROM `leaderboards`
 WHERE `uid` = p_lid;
 
-IF _lid > 0 THEN
+IF _lid = 0 THEN
+LEAVE sp;
+END IF;
+
+SELECT `id` INTO _pid FROM `players` WHERE `uid` = p_pid;
+
+IF _pid = 0 THEN
+LEAVE sp;
+END IF;
+
+SELECT `id`, `value1`, `value2`, `value3`
+INTO _ldid, v1, v2, v3
+FROM `leaderboard_data`
+WHERE `lid` = _lid AND `pid` = _pid;
+
+IF _ldid = 0 THEN
+LEAVE sp;
+END IF;
 
 IF v3_order = 0 AND v2_order = 0 AND v1_order = 0 THEN
 LEAVE sp;
 END IF;
 
 IF v3_order = 0 AND v2_order = 0 AND v1_order = 1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value1 > v1 OR (value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value1 > v1 OR (value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 0 AND v2_order = 0 AND v1_order = -1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value1 < v1 OR (value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value1 < v1 OR (value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 0 AND v2_order = 1 AND v1_order = 1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 > v2 OR (value2 = v2 AND value1 > v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value2 > v2 OR (value2 = v2 AND value1 > v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 0 AND v2_order = 1 AND v1_order = -1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 > v2 OR (value2 = v2 AND value1 < v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value2 > v2 OR (value2 = v2 AND value1 < v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 0 AND v2_order = -1 AND v1_order = 1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 < v2 OR (value2 = v2 AND value1 > v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value2 < v2 OR (value2 = v2 AND value1 > v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 0 AND v2_order = -1 AND v1_order = -1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value2 < v2 OR (value2 = v2 AND value1 < v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value2 < v2 OR (value2 = v2 AND value1 < v1) OR (value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 1 AND v2_order = 1 AND v1_order = 1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 > v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 1 AND v2_order = 1 AND v1_order = -1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 > v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 1 AND v2_order = -1 AND v1_order = 1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 > v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = 1 AND v2_order = -1 AND v1_order = -1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 > v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 > v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = -1 AND v2_order = 1 AND v1_order = 1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 < v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = -1 AND v2_order = 1 AND v1_order = -1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 < v3 OR (value3 = v3 AND value2 > v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = -1 AND v2_order = -1 AND v1_order = 1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 < v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 > v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
 IF v3_order = -1 AND v2_order = -1 AND v1_order = -1 THEN
-SELECT COUNT(id) FROM `leaderboard_data` WHERE value3 < v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid);
+SELECT COUNT(id) FROM `leaderboard_data` WHERE lid = _lid AND (value3 < v3 OR (value3 = v3 AND value2 < v2) OR (value3 = v3 AND value2 = v2 AND value1 < v1) OR (value3 = v3 AND value2 = v2 AND value1 = v1 AND id < _ldid));
 LEAVE sp;
 END IF;
 
-END IF;
-
-END IF;
-
-COMMIT;
 END$$
 
-CREATE DEFINER=`root`@`%` PROCEDURE `NEW_LEADERBOARD_DATA` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4, IN `p_pid` VARCHAR(30) CHARSET utf8mb4, IN `p_v1` INT ZEROFILL, IN `p_v2` INT ZEROFILL, IN `p_v3` INT ZEROFILL)   sp:BEGIN
+CREATE DEFINER=`root`@`%` PROCEDURE `NEW_LEADERBOARD_DATA` (IN `p_lid` VARCHAR(50) CHARSET utf8mb4, IN `p_pid` VARCHAR(30) CHARSET utf8mb4, IN `p_v1` INT ZEROFILL, IN `p_v2` INT ZEROFILL, IN `p_v3` INT ZEROFILL)   sp: BEGIN
 DECLARE `ldid` INT DEFAULT 0;
+DECLARE _lid INT DEFAULT 0;
+DECLARE _pid INT DEFAULT 0;
 DECLARE `v1` INT DEFAULT 0;
 DECLARE `v2` INT DEFAULT 0;
 DECLARE `v3` INT DEFAULT 0;
@@ -186,15 +189,22 @@ DECLARE `v1_limit` INT DEFAULT 0;
 DECLARE `v2_limit` INT DEFAULT 0;
 DECLARE `v3_limit` INT DEFAULT 0;
 
-START TRANSACTION;
-
-SELECT `value1_order`, `value2_order`, `value3_order`,
+SELECT `id`, `value1_order`, `value2_order`, `value3_order`,
 `value1_limit`, `value2_limit`, `value3_limit`
-INTO v1_order, v2_order, v3_order, 
+INTO _lid, v1_order, v2_order, v3_order, 
 v1_limit, v2_limit, v3_limit
 FROM `leaderboards`
 WHERE `uid` = p_lid;
 
+IF _lid = 0 THEN
+LEAVE sp;
+END IF;
+
+SELECT `id` into _pid FROM `players` WHERE `uid` = p_pid;
+
+IF _pid = 0 THEN
+LEAVE sp;
+END IF;
 
 -- CHECK LIMITS
 
@@ -240,12 +250,10 @@ END IF;
 END IF;
 END IF;
 
-
-
 SELECT `id`, `value1`, `value2`, `value3`
 INTO ldid, v1, v2, v3
 FROM `leaderboard_data`
-WHERE `lid` = p_lid AND `pid` = p_pid;
+WHERE `lid` = _lid AND `pid` = _pid;
 
 IF ldid > 0 THEN
 -- EXISTS
@@ -297,7 +305,7 @@ END IF;
 
 UPDATE `leaderboard_data`
 SET `value1` = p_v1, `value2` = p_v2, `value3` = p_v3
-WHERE `lid` = p_lid AND `pid` = p_pid;
+WHERE `lid` = _lid AND `pid` = _pid;
 
 SELECT 1;
 
@@ -305,12 +313,12 @@ ELSE
 -- NOT EXISTS
 
 INSERT INTO `leaderboard_data`(`lid`, `pid`, `value1`, `value2`, `value3`)
-VALUES(p_lid, p_pid, p_v1, p_v2, p_v3);
+VALUES(_lid, _pid, p_v1, p_v2, p_v3);
 
 SELECT 1;
 
 END IF;
-COMMIT;
+
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `NEW_PLAYER` (IN `name` VARCHAR(200) CHARSET utf8mb4)   BEGIN
@@ -401,8 +409,8 @@ DELIMITER ;
 
 CREATE TABLE IF NOT EXISTS `leaderboard_data` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `lid` varchar(50) NOT NULL,
-  `pid` varchar(30) NOT NULL,
+  `lid` int NOT NULL,
+  `pid` int NOT NULL,
   `value1` int NOT NULL DEFAULT '0',
   `value2` int NOT NULL DEFAULT '0',
   `value3` int NOT NULL DEFAULT '0',
@@ -454,8 +462,8 @@ ALTER TABLE `leaderboards`
 -- Constraints for table `leaderboard_data`
 --
 ALTER TABLE `leaderboard_data`
-  ADD CONSTRAINT `leaderboard_data_ibfk_1` FOREIGN KEY (`lid`) REFERENCES `leaderboards` (`uid`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `leaderboard_data_ibfk_2` FOREIGN KEY (`pid`) REFERENCES `players` (`uid`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `leaderboard_data_ibfk_1` FOREIGN KEY (`lid`) REFERENCES `leaderboards` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `leaderboard_data_ibfk_2` FOREIGN KEY (`pid`) REFERENCES `players` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
