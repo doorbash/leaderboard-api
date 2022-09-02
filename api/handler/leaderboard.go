@@ -140,6 +140,11 @@ func (l *LeaderboardHandler) GetLeaderboardByPID(w http.ResponseWriter, r *http.
 		return
 	}
 
+	if pos == -1 {
+		util.WriteStatus(w, http.StatusNotFound)
+		return
+	}
+
 	_offset := 0
 	if pos+offset > 0 {
 		_offset = pos + offset
