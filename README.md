@@ -6,7 +6,7 @@
 ## Configuration
 - Create `.env`:
 ```
-APP_VERSION=1.0.4
+APP_VERSION=1.1.0
 
 DATABASE_ROOT_PASSWORD="DATABASE_ROOT_PASSWORD"
 DATABASE_USER="DATABASE_USER"
@@ -71,6 +71,9 @@ First result is from database and then for the next 20 minutes results are from 
 To get data from cache set `offset` to 0 and `count` to 100 (or not set them)
 
 Cached results are 0 ~ 20 minutes old but they are faster.
+
+### Get Leaderboard by Player UID
+**GET** `https://your.domain/api/leaderboards/put_leaderboard_uid_here/put_player_uid_here?offset=1&count=3`
 
 ### Set new leaderboard data
 **POST** `https://your.domain/api/leaderboards/put_leaderboard_uid_here/new`
