@@ -65,7 +65,11 @@ func (l *LeaderboardHandler) GetLeaderboard(w http.ResponseWriter, r *http.Reque
 		}
 
 		if ls != nil {
-			util.WriteJson(w, json.RawMessage(*ls))
+			ret := map[string]interface{}{
+				"offset":      offset,
+				"leaderboard": json.RawMessage(*ls),
+			}
+			util.WriteJson(w, ret)
 			return
 		}
 	}
@@ -89,7 +93,12 @@ func (l *LeaderboardHandler) GetLeaderboard(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	util.WriteJson(w, lds)
+	ret := map[string]interface{}{
+		"offset":      offset,
+		"leaderboard": lds,
+	}
+
+	util.WriteJson(w, ret)
 }
 
 func (l *LeaderboardHandler) GetLeaderboardByPID(w http.ResponseWriter, r *http.Request) {
